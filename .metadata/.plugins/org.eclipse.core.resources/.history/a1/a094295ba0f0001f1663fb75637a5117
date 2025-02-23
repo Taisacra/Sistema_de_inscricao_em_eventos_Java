@@ -1,0 +1,7 @@
+package br.com.nlw.events.exception;
+
+public class UserIndicadorNotFoudException extends RuntimeException {
+	public UserIndicadorNotFoudException(String msg) {
+		super(msg);
+	}
+}

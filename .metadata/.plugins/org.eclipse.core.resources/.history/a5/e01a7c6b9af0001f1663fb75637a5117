@@ -1,0 +1,46 @@
+package br.com.nlw.events.service;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import br.com.nlw.events.exception.EventNotFoundException;
+import br.com.nlw.events.model.Event;
+import br.com.nlw.events.model.Subscription;
+import br.com.nlw.events.model.User;
+import br.com.nlw.events.repository.EventRepository;
+import br.com.nlw.events.repository.SubscriptionRepository;
+import br.com.nlw.events.repository.UserRepository;
+
+@Service
+public class SubscriptionService {
+	
+	@Autowired
+	private EventRepository eventRepo;
+	
+	@Autowired
+	private UserRepository userRepo;
+	
+	@Autowired
+	private SubscriptionRepository subRepo;
+	
+	public Subscription createNewSubscription(String eventName, User user) {
+	
+		Event evt = eventRepo.findByPrettyName(eventName);//recuperar o evento pelo nome 
+		if(evt == null) {//caso o evento não exista vai lança essa exception
+			throw new EventNotFoundException("Evento" + eventName + "não existe");
+		}
+		User userRec =userRepo.findByEmail(user.getEmaill());//usuario recuperado tenta recuperar do banco
+		if(userRec == null) { // se o user não existir vai gravar no banco um novo usuário
+			userRec = userRepo.save(user); //gravo usuario no banco 
+		}
+		
+		Subscription subs = new Subscription();
+		subs.setEvent(evt); //atribuir o evento que recuperei na inscrição 
+		//se o usuário já exixstir vai utilizar ele na inscrição
+		subs.setSubscriber(userRec); //atribuir o usuario sendo o assinante 
+		
+		Subscription res = subRepo.save(subs); // salva tudo no banco tabela inscrição 
+		return res;
+		
+	}
+}

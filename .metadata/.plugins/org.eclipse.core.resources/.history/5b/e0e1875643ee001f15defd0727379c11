@@ -1,0 +1,7 @@
+package br.com.nlw.events.repository;
+
+import br.com.nlw.events.model.Subscription;
+
+public class SubscriptionRepository extends CrudRepository<Subscription, Integer>{
+
+}

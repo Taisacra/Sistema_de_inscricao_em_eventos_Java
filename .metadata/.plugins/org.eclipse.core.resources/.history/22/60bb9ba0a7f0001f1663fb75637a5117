@@ -1,0 +1,62 @@
+package br.com.nlw.events.service;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import br.com.nlw.events.dto.SubscriptionResponse;
+import br.com.nlw.events.exception.EventNotFoundException;
+import br.com.nlw.events.exception.SubscriptionConflictException;
+import br.com.nlw.events.exception.UserIndicadorNotFoudException;
+import br.com.nlw.events.model.Event;
+import br.com.nlw.events.model.Subscription;
+import br.com.nlw.events.model.User;
+import br.com.nlw.events.repository.EventRepository;
+import br.com.nlw.events.repository.SubscriptionRepository;
+import br.com.nlw.events.repository.UserRepository;
+
+@Service
+public class SubscriptionService {
+	
+	@Autowired
+	private EventRepository eventRepo;
+	
+	@Autowired
+	private UserRepository userRepo;
+	
+	@Autowired
+	private SubscriptionRepository subRepo;
+	
+	public SubscriptionResponse createNewSubscription(String eventName, User user, Integer userId) {
+	
+		Event evt = eventRepo.findByPrettyName(eventName);//recuperar o evento pelo nome 
+		if(evt == null) {//CASO ALTERNATIVO 2: Caso o evento não exista vai lança essa exception
+			throw new EventNotFoundException("Evento " + eventName + " não existe");
+		}
+		User userRec =userRepo.findByEmail(user.getEmaill());//usuario recuperado tenta recuperar do banco
+		if(userRec == null) { // CASO ALTERNATIVO 1: Se o user não existir vai gravar no banco um novo usuário
+			userRec = userRepo.save(user); //gravo usuario no banco 
+		}
+		
+	    
+		User indicador = userRepo.findById(userId).orElse(null);
+        if (indicador == null) {
+            throw new UserIndicadorNotFoudException("Usuário " +userId+ " indicador não existe");
+        }
+		
+		Subscription subs = new Subscription();
+		subs.setEvent(evt); //atribuir o evento que recuperei na inscrição 
+		//se o usuário já exixstir vai utilizar ele na inscrição
+		subs.setSubscriber(userRec); //atribuir o usuario sendo o assinante 
+		subs.setSubscriber(indicador);
+		
+		Subscription tmpSub = subRepo.findByEventAndSubscriber(evt, userRec);
+		if(tmpSub != null) {//CASO ALTERNATIVO 3: Caso exista uma inscrição com o usuário passado
+			throw new SubscriptionConflictException("Já existe inscrição para o usuário  " + userRec.getName()+ " no evento " + evt.getTitle());
+		}
+		
+		Subscription res = subRepo.save(subs); // salva tudo no banco tabela inscrição 
+		//retorna uma resposta de inscrição
+		return new SubscriptionResponse(res.getSubscriptionNumber(), "http://codecraft.com/subscription/"+res.getEvent().getPrettyName()+"/"+res.getSubscriber().getId());
+		
+	}
+}
